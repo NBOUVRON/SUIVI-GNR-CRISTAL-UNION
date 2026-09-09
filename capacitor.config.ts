@@ -1,0 +1,88 @@
+workflows:
+  android-debug:
+    name: Suivi GNR - Android (test)
+    max_build_duration: 60
+    instance_type: mac_mini_m2
+    environment:
+      node: 22
+      java: 21
+      vars:
+        PACKAGE_NAME: "fr.cristalunion.suivignr"
+    scripts:
+      - name: Install dependencies
+        script: npm install
+      - name: Ensure TypeScript is available
+        script: npm install --save-dev typescript@5.9.2
+      - name: Create Android project
+        script: npx cap add android
+      - name: Replace Android launcher icon
+        script: |
+          set -e
+          RES="$CM_BUILD_DIR/android/app/src/main/res"
+          echo "Nettoyage des icones Capacitor..."
+          find "$RES" -type f \( -name 'ic_launcher.png' -o -name 'ic_launcher_round.png' -o -name 'ic_launcher.xml' -o -name 'ic_launcher_round.xml' \) -delete
+          rm -rf "$RES"/mipmap-anydpi "$RES"/mipmap-anydpi-v26
+          echo "Creation des icones Suivi GNR..."
+          for spec in "mdpi:48" "hdpi:72" "xhdpi:96" "xxhdpi:144" "xxxhdpi:192"; do
+            density="${spec%%:*}"
+            size="${spec##*:}"
+            mkdir -p "$RES/mipmap-$density"
+            sips -z "$size" "$size" "$CM_BUILD_DIR/resources/icon.png" --out "$RES/mipmap-$density/ic_launcher.png" >/dev/null
+            cp "$RES/mipmap-$density/ic_launcher.png" "$RES/mipmap-$density/ic_launcher_round.png"
+          done
+      - name: Replace Android splash
+        script: |
+          set -e
+          RES="$CM_BUILD_DIR/android/app/src/main/res"
+          echo "Nettoyage des anciens splash..."
+          find "$RES" -type f -name 'splash.png' -delete
+          echo "Installation du splash Suivi GNR..."
+          for dir in \
+            drawable \
+            drawable-v21 \
+            drawable-v23 \
+            drawable-v24 \
+            drawable-v31 \
+            drawable-port-mdpi \
+            drawable-port-hdpi \
+            drawable-port-xhdpi \
+            drawable-port-xxhdpi \
+            drawable-port-xxxhdpi \
+            drawable-land-mdpi \
+            drawable-land-hdpi \
+            drawable-land-xhdpi \
+            drawable-land-xxhdpi \
+            drawable-land-xxxhdpi; do
+            mkdir -p "$RES/$dir"
+            cp "$CM_BUILD_DIR/resources/splash.png" "$RES/$dir/splash.png"
+          done
+      - name: Sync Capacitor web assets
+        script: npx cap sync android
+      - name: Configure Android SDK
+        script: echo "sdk.dir=$ANDROID_SDK_ROOT" > "$CM_BUILD_DIR/android/local.properties"
+      - name: Build installable Android APK
+        script: cd android && ./gradlew assembleDebug
+    artifacts:
+      - android/app/build/outputs/apk/debug/app-debug.apk
+
+  ios-simulator-test:
+    name: Suivi GNR - iOS (simulateur)
+    max_build_duration: 60
+    instance_type: mac_mini_m2
+    environment:
+      node: 22
+    scripts:
+      - name: Install dependencies
+        script: npm install
+      - name: Ensure TypeScript is available
+        script: npm install --save-dev typescript@5.9.2
+      - name: Create iOS project
+        script: npx cap add ios
+      - name: Generate native iOS assets
+        script: npx @capacitor/assets generate --ios --assetPath resources --iconBackgroundColor '#182420' --iconBackgroundColorDark '#182420' --splashBackgroundColor '#182420' --splashBackgroundColorDark '#182420' || true
+      - name: Sync Capacitor web assets
+        script: npx cap sync ios
+      - name: Build iOS simulator app
+        script: xcodebuild -workspace ios/App/App.xcworkspace -scheme App -configuration Debug -sdk iphonesimulator -derivedDataPath build/ios-simulator CODE_SIGNING_ALLOWED=NO
+    artifacts:
+      - build/ios-simulator/Build/Products/Debug-iphonesimulator/App.app

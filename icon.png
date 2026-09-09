@@ -1,0 +1,21 @@
+import type { CapacitorConfig } from '@capacitor/cli';
+
+const config: CapacitorConfig = {
+  appId: 'fr.cristalunion.suivignr',
+  appName: 'Suivi GNR',
+  webDir: 'www',
+  bundledWebRuntime: false,
+  plugins: {
+    SplashScreen: {
+      // Duree courte : l'ecran de demarrage de l'appli elle-meme (5s, meme photo)
+      // prend le relais juste apres, pour eviter un double splash trop long.
+      launchShowDuration: 600,
+      launchAutoHide: true,
+      backgroundColor: '#182420',
+      androidScaleType: 'CENTER_INSIDE',
+      showSpinner: false
+    }
+  }
+};
+
+export default config;
