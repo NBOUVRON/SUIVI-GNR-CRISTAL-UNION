@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1" />
+<title>Suivi GNR</title>
+<meta name="theme-color" content="#182420" />
+
+<style>
+  html, body { margin: 0; padding: 0; background: #182420; height: 100%; }
+  #root { min-height: 100vh; }
+  * { -webkit-tap-highlight-color: transparent; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script src="bundle.js"></script>
+</body>
+</html>
