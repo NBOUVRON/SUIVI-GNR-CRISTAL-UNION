@@ -1,13 +1,13 @@
 workflows:
   android-debug:
-    name: Suivi GNR - Android (test)
+    name: Cahier de RELÈVE – Android (test)
     max_build_duration: 60
     instance_type: mac_mini_m2
     environment:
       node: 22
       java: 21
       vars:
-        PACKAGE_NAME: "fr.cristalunion.suivignr"
+        PACKAGE_NAME: "fr.cristalunion.cahierreleve"
     scripts:
       - name: Install dependencies
         script: npm install
@@ -15,14 +15,23 @@ workflows:
         script: npm install --save-dev typescript@5.9.2
       - name: Create Android project
         script: npx cap add android
+      - name: Add location permission
+        script: |
+          set -e
+          MANIFEST="$CM_BUILD_DIR/android/app/src/main/AndroidManifest.xml"
+          if ! grep -q "ACCESS_FINE_LOCATION" "$MANIFEST"; then
+            sed -i '' 's#<application#<uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />\n    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />\n\n    <application#' "$MANIFEST"
+          fi
+      - name: Prepare Firebase Android configuration
+        script: cp google-services.json android/app/google-services.json
       - name: Replace Android launcher icon
         script: |
           set -e
           RES="$CM_BUILD_DIR/android/app/src/main/res"
-          echo "Nettoyage des icones Capacitor..."
+          echo "Nettoyage des icônes Capacitor..."
           find "$RES" -type f \( -name 'ic_launcher.png' -o -name 'ic_launcher_round.png' -o -name 'ic_launcher.xml' -o -name 'ic_launcher_round.xml' \) -delete
           rm -rf "$RES"/mipmap-anydpi "$RES"/mipmap-anydpi-v26
-          echo "Creation des icones Suivi GNR..."
+          echo "Création des icônes Cahier de RELÈVE..."
           for spec in "mdpi:48" "hdpi:72" "xhdpi:96" "xxhdpi:144" "xxxhdpi:192"; do
             density="${spec%%:*}"
             size="${spec##*:}"
@@ -36,7 +45,7 @@ workflows:
           RES="$CM_BUILD_DIR/android/app/src/main/res"
           echo "Nettoyage des anciens splash..."
           find "$RES" -type f -name 'splash.png' -delete
-          echo "Installation du splash Suivi GNR..."
+          echo "Installation du splash Cahier de RELÈVE..."
           for dir in \
             drawable \
             drawable-v21 \
@@ -66,7 +75,7 @@ workflows:
       - android/app/build/outputs/apk/debug/app-debug.apk
 
   ios-simulator-test:
-    name: Suivi GNR - iOS (simulateur)
+    name: Cahier de RELÈVE – iOS (simulateur)
     max_build_duration: 60
     instance_type: mac_mini_m2
     environment:
@@ -79,7 +88,7 @@ workflows:
       - name: Create iOS project
         script: npx cap add ios
       - name: Generate native iOS assets
-        script: npx @capacitor/assets generate --ios --assetPath resources --iconBackgroundColor '#182420' --iconBackgroundColorDark '#182420' --splashBackgroundColor '#182420' --splashBackgroundColorDark '#182420' || true
+        script: npx @capacitor/assets generate --ios --assetPath resources --iconBackgroundColor '#111923' --iconBackgroundColorDark '#111923' --splashBackgroundColor '#111923' --splashBackgroundColorDark '#111923' || true
       - name: Sync Capacitor web assets
         script: npx cap sync ios
       - name: Build iOS simulator app
