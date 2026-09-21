@@ -1,0 +1,12 @@
+{
+  "projects": {
+    "default": "cahier-releve"
+  },
+  "targets": {
+    "cahier-releve": {
+      "hosting": {
+        "suivignr": ["gnr-cristal-union"]
+      }
+    }
+  }
+}
