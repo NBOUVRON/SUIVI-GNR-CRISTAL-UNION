@@ -99,7 +99,7 @@ workflows:
       - name: Decoder la cle de compte de service
         script: |
           set -e
-          echo "$FIREBASE_SERVICE_ACCOUNT_BASE64" | base64 -D > $CM_BUILD_DIR/firebase-service-account.json
+          echo "$FIREBASE_SERVICE_ACCOUNT_BASE64" | tr -d '\n\r ' | base64 -D > $CM_BUILD_DIR/firebase-service-account.json
           python3 -m json.tool $CM_BUILD_DIR/firebase-service-account.json > /dev/null
           echo "Cle de compte de service decodee et valide."
           echo "GOOGLE_APPLICATION_CREDENTIALS=$CM_BUILD_DIR/firebase-service-account.json" >> $CM_ENV
