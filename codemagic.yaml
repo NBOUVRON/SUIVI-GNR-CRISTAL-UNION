@@ -86,3 +86,21 @@ workflows:
         script: xcodebuild -workspace ios/App/App.xcworkspace -scheme App -configuration Debug -sdk iphonesimulator -derivedDataPath build/ios-simulator CODE_SIGNING_ALLOWED=NO
     artifacts:
       - build/ios-simulator/Build/Products/Debug-iphonesimulator/App.app
+
+  deploy-hosting:
+    name: Suivi GNR - Deployer sur Firebase Hosting
+    max_build_duration: 15
+    instance_type: mac_mini_m2
+    environment:
+      node: 22
+      groups:
+        - firebase
+    scripts:
+      - name: Decoder la cle de compte de service
+        script: |
+          echo $FIREBASE_SERVICE_ACCOUNT_BASE64 | base64 --decode > $CM_BUILD_DIR/firebase-service-account.json
+          echo "GOOGLE_APPLICATION_CREDENTIALS=$CM_BUILD_DIR/firebase-service-account.json" >> $CM_ENV
+      - name: Installer Firebase CLI
+        script: npm install -g firebase-tools
+      - name: Deployer sur Firebase Hosting
+        script: firebase deploy --only hosting:suivignr --project cahier-releve --non-interactive
