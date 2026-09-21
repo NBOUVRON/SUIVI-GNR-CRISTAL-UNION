@@ -5,11 +5,15 @@ const config: CapacitorConfig = {
   appName: 'Suivi GNR',
   webDir: 'www',
   bundledWebRuntime: false,
+  server: {
+    url: 'https://gnr-cristal-union.web.app',
+    cleartext: false
+  },
   plugins: {
     SplashScreen: {
       launchShowDuration: 600,
       launchAutoHide: true,
-      backgroundColor: '#182420',
+      backgroundColor: '#FFFFFF',
       androidScaleType: 'CENTER_INSIDE',
       showSpinner: false
     }
