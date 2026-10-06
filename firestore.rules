@@ -1,0 +1,88 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() { return request.auth != null; }
+    function myProfile() { return get(/databases/$(database)/documents/profiles/$(request.auth.uid)); }
+    function isNico() { return signedIn() && myProfile().data.display_name == 'Nico'; }
+    function isMecaAllowed() {
+      return signedIn() && (
+        myProfile().data.email == 'crm@cristal-union.fr' ||
+        myProfile().data.email == 'jboyer@cristal-union.fr' ||
+        myProfile().data.display_name == 'Nico' ||
+        myProfile().data.display_name == 'Jean-Yves'
+      );
+    }
+    function isPanneAllowed() {
+      return request.auth != null && request.auth.token.email in [
+        'nbouvron@cristal-union.fr',
+        'jyperrin@cristal-union.fr',
+        'dolivier1@cristal-union.fr',
+        'crm@cristal-union.fr',
+        'fpoette@cristal-union.fr',
+        'lbellemere@cristal-union.fr',
+        'lstepien@cristal-union.fr'
+      ];
+    }
+
+    match /profiles/{uid} {
+      allow read: if signedIn();
+      allow create, update, delete: if false;
+    }
+
+    match /handover_notes/{id} {
+      allow read, create: if signedIn();
+      // Seul Nico peut modifier ou supprimer les consignes de n'importe qui.
+      allow update, delete: if isNico();
+    }
+
+    match /maintenance_tasks/{id} {
+      allow read, create: if signedIn();
+      allow update, delete: if false;
+    }
+
+    match /maintenance_checks/{id} {
+      allow read: if signedIn();
+      // The task ID is the document ID: only one immutable CHECK can exist.
+      allow create: if signedIn()
+        && request.resource.data.task_id == id
+        && request.resource.data.checked_by == request.auth.uid
+        && !exists(/databases/$(database)/documents/maintenance_checks/$(id));
+      allow update, delete: if false;
+    }
+
+    match /sector_notes/{id} {
+      allow read, create: if signedIn();
+      allow update, delete: if false;
+    }
+
+    match /mechanical_crm/{id} {
+      allow read: if signedIn();
+      allow create: if isMecaAllowed();
+      allow update, delete: if false;
+    }
+
+    match /documents/{id} {
+      allow read: if signedIn();
+      allow create: if signedIn();
+      allow update, delete: if false;
+    }
+
+    match /gnr_groupes/{id} {
+      allow read: if signedIn();
+      // Seul Nico peut ajouter ou supprimer un equipement.
+      allow create, delete: if isNico();
+      // Panne/disponible : reserve a Nicolas, Jean-Yves, Dimitri, Charles.
+      // GNR OK : ouvert a tout utilisateur connecte.
+      allow update: if
+        (isPanneAllowed() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['en_panne', 'panne_by', 'panne_at']))
+        || (signedIn() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['gnr_ok_at', 'gnr_ok_by']));
+    }
+
+    match /gnr_fills/{id} {
+      allow read, create: if signedIn();
+      // Tout le monde peut supprimer un plein qu'il a saisi (ou une erreur de saisie).
+      allow delete: if signedIn();
+      allow update: if false;
+    }
+  }
+}
