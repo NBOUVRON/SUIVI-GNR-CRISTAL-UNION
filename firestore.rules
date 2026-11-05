@@ -82,7 +82,10 @@ service cloud.firestore {
       allow read, create: if signedIn();
       // Tout le monde peut supprimer un plein qu'il a saisi (ou une erreur de saisie).
       allow delete: if signedIn();
-      allow update: if false;
+      // Modifier le volume d'un plein : Ludovic et Nicolas uniquement, avec trace (qui, quand, ancienne valeur).
+      allow update: if request.auth != null
+        && request.auth.token.email in ['lhenry@cristal-union.fr', 'nbouvron@cristal-union.fr']
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['quantity', 'previous_quantity', 'modified_by', 'modified_at']);
     }
   }
 }
